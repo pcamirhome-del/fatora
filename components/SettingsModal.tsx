@@ -78,8 +78,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white/90 backdrop-blur-xl w-full max-w-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="bg-gray-900/95 backdrop-blur-md text-white p-6 flex justify-between items-center">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gray-900 text-white p-6 flex justify-between items-center">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Settings size={24} />
             الإعدادات العامة
@@ -93,7 +93,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           
           {/* App Name Section */}
           <section className="space-y-4">
-            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b border-indigo-100">
+            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b">
               <Type size={20} />
               اسم البرنامج
             </h3>
@@ -102,26 +102,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 type="text" 
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
-                className="flex-1 px-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold backdrop-blur-sm"
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
                 placeholder="أدخل اسم البرنامج الجديد"
               />
-              <button onClick={handleSaveAppName} className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold transition-all shadow-lg shadow-indigo-200">حفظ</button>
+              <button onClick={handleSaveAppName} className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold transition-all">حفظ</button>
             </div>
           </section>
 
           {/* Shipping Section */}
           <section className="space-y-4">
-            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b border-indigo-100">
+            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b">
               <MapPin size={20} />
               مصاريف الشحن
             </h3>
-            <div className="bg-gray-50/50 backdrop-blur-sm p-4 rounded-xl space-y-4 border border-gray-100">
+            <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-100">
               <div>
                 <label className="block text-sm font-bold text-gray-600 mb-2">المحافظة</label>
                 <select 
                   value={selectedGov} 
                   onChange={(e) => setSelectedGov(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
                 >
                   {EGYPT_GOVERNORATES.map(gov => (
                     <option key={gov} value={gov}>{gov}</option>
@@ -135,9 +135,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       type="number" 
                       value={currentShippingPrice}
                       onChange={(e) => setCurrentShippingPrice(Number(e.target.value))}
-                      className="flex-1 px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
+                      className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
                    />
-                   <button onClick={handleSaveShipping} className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition-all shadow-lg shadow-green-200">حفظ السعر</button>
+                   <button onClick={handleSaveShipping} className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition-all">حفظ السعر</button>
                  </div>
               </div>
             </div>
@@ -145,18 +145,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* Backup Section */}
           <section className="space-y-4">
-            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b border-indigo-100">
+            <h3 className="text-lg font-black text-indigo-900 flex items-center gap-2 pb-2 border-b">
               <Upload size={20} />
               النسخ الاحتياطي والاستعادة
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button onClick={handleExportBackup} className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-indigo-200 rounded-xl hover:bg-indigo-50/50 hover:border-indigo-400 transition-all group bg-white/50">
+              <button onClick={handleExportBackup} className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-indigo-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
                 <Download size={32} className="text-indigo-400 group-hover:text-indigo-600" />
                 <span className="font-bold text-indigo-700">تصدير نسخة احتياطية</span>
                 <span className="text-xs text-indigo-400">حفظ ملف JSON</span>
               </button>
               
-              <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-green-200 rounded-xl hover:bg-green-50/50 hover:border-green-400 transition-all group bg-white/50">
+              <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-green-200 rounded-xl hover:bg-green-50 hover:border-green-400 transition-all group">
                 <Upload size={32} className="text-green-400 group-hover:text-green-600" />
                 <span className="font-bold text-green-700">استعادة نسخة احتياطية</span>
                 <span className="text-xs text-green-400">رفع ملف JSON</span>
