@@ -14,8 +14,7 @@
     "xlsx": "0.18.5",
     "jspdf": "2.5.1",
     "jspdf-autotable": "3.8.2",
-    "lucide-react": "0.463.0",
-    "firebase": "^12.8.0"
+    "lucide-react": "0.463.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
