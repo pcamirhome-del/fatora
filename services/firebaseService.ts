@@ -1,6 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, push, onValue, remove, update } from "firebase/database";
-import { Invoice } from "../types";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getDatabase, ref, push, set } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAYdWvZbTTkGlfI6vv02EFUMbw5eeF4UpU",
@@ -9,32 +8,30 @@ const firebaseConfig = {
   projectId: "sample-firebase-adddi-app",
   storageBucket: "sample-firebase-adddi-app.firebasestorage.app",
   messagingSenderId: "1013529485030",
-  appId: "1:1013529485030:web:3dd9b79cd7d7ba41b42527"
+  appId: "1:1013529485030:web:1f1836b6d3d63cd9b42527"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+// التأكد من عدم تهيئة التطبيق أكثر من مرة لتجنب أخطاء الخدمة
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-export const saveInvoiceToCloud = async (invoice: Invoice) => {
-  const invoiceRef = ref(db, 'invoices/' + invoice.id);
-  return set(invoiceRef, invoice);
-};
+// تمرير الـ app والـ URL صراحة لضمان توفر خدمة قاعدة البيانات
+export const db = getDatabase(app, firebaseConfig.databaseURL);
 
-export const deleteInvoiceFromCloud = async (id: string) => {
-  const invoiceRef = ref(db, 'invoices/' + id);
-  return remove(invoiceRef);
-};
-
-export const subscribeToInvoices = (callback: (invoices: Invoice[]) => void) => {
-  const invoicesRef = ref(db, 'invoices');
-  onValue(invoicesRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      const list = Object.keys(data).map(key => data[key]);
-      // Sort by date or id to keep consistent order
-      callback(list.reverse());
-    } else {
-      callback([]);
-    }
-  });
-};
+/**
+ * دالة لحفظ سجل المحادثة أو الفواتير في Firebase
+ */
+export async function saveToCloud(path: string, data: any) {
+  try {
+    const dataRef = ref(db, path);
+    const newItemRef = push(dataRef);
+    await set(newItemRef, {
+      ...data,
+      timestamp: Date.now()
+    });
+    console.log("✅ تم الحفظ في السحابة بنجاح!");
+    return true;
+  } catch (error) {
+    console.error("❌ فشل الحفظ في السحابة:", error);
+    return false;
+  }
+}

@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Edit3, Loader2, Cloud } from 'lucide-react';
+import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Edit3, Printer } from 'lucide-react';
 import { Invoice } from './types';
 import InvoiceModal from './components/InvoiceModal';
-import { subscribeToInvoices, saveInvoiceToCloud, deleteInvoiceFromCloud } from './services/firebaseService';
 
 const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load from Firebase on mount
+  // Load from localStorage on mount
   useEffect(() => {
-    setIsLoading(true);
-    const unsubscribe = subscribeToInvoices((data) => {
-      setInvoices(data);
-      setIsLoading(false);
-    });
-    // The subscribe function uses onValue which persists, so we return cleanup if needed
+    const saved = localStorage.getItem('mrs_fashion_invoices');
+    if (saved) {
+      try {
+        setInvoices(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse invoices', e);
+      }
+    }
   }, []);
+
+  // Save to localStorage whenever invoices change
+  useEffect(() => {
+    localStorage.setItem('mrs_fashion_invoices', JSON.stringify(invoices));
+  }, [invoices]);
 
   const handleCreateInvoice = () => {
     setEditingInvoice(null);
@@ -31,24 +36,21 @@ const App: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveInvoice = async (savedInvoice: Invoice) => {
-    try {
-      await saveInvoiceToCloud(savedInvoice);
-      setIsModalOpen(false);
-      setEditingInvoice(null);
-    } catch (error) {
-      console.error("Error saving to Firebase:", error);
-      alert("حدث خطأ أثناء الحفظ في السحابة. يرجى التحقق من الاتصال.");
-    }
+  const handleSaveInvoice = (savedInvoice: Invoice) => {
+    setInvoices(prev => {
+      const exists = prev.find(inv => inv.id === savedInvoice.id);
+      if (exists) {
+        return prev.map(inv => inv.id === savedInvoice.id ? savedInvoice : inv);
+      }
+      return [savedInvoice, ...prev];
+    });
+    setIsModalOpen(false);
+    setEditingInvoice(null);
   };
 
-  const deleteInvoice = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذه الفاتورة من السحابة؟')) {
-      try {
-        await deleteInvoiceFromCloud(id);
-      } catch (error) {
-        alert("حدث خطأ أثناء الحذف.");
-      }
+  const deleteInvoice = (id: string) => {
+    if (confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) {
+      setInvoices(invoices.filter(inv => inv.id !== id));
     }
   };
 
@@ -75,7 +77,7 @@ const App: React.FC = () => {
           </button>
           
           <div className="pt-4 pb-2 text-xs font-bold text-indigo-400 uppercase tracking-widest px-4">
-            الفواتير السحابية
+            الفواتير
           </div>
           
           <button 
@@ -93,11 +95,7 @@ const App: React.FC = () => {
         </nav>
         
         <div className="p-4 border-t border-indigo-800">
-          <div className="flex items-center gap-2 px-4 py-2 text-indigo-300 text-xs font-bold">
-            <Cloud size={14} />
-            <span>متصل بالسحابة</span>
-          </div>
-          <button className="w-full flex items-center gap-3 px-4 py-3 mt-2 hover:bg-red-900/50 hover:text-red-200 rounded-xl transition-all">
+          <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/50 hover:text-red-200 rounded-xl transition-all">
             <LogOut size={20} />
             <span>تسجيل الخروج</span>
           </button>
@@ -108,8 +106,8 @@ const App: React.FC = () => {
       <main className="flex-1 mr-64 p-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 no-print">
           <div>
-            <h2 className="text-3xl font-black text-gray-900">سجل الفواتير السحابي</h2>
-            <p className="text-gray-500 mt-1">يتم حفظ جميع البيانات تلقائياً على خوادم Google Firebase</p>
+            <h2 className="text-3xl font-black text-gray-900">سجل الفواتير</h2>
+            <p className="text-gray-500 mt-1">إدارة جميع الفواتير الصادرة لعملائك</p>
           </div>
           
           <div className="relative w-full md:w-96">
@@ -125,79 +123,72 @@ const App: React.FC = () => {
         </header>
 
         {/* Invoice List Table */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden no-print min-h-[400px]">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center p-40 text-indigo-600">
-              <Loader2 className="animate-spin mb-4" size={48} />
-              <p className="font-bold">جاري جلب البيانات من السحابة...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="p-5 text-sm font-bold text-gray-600">رقم الفاتورة</th>
-                    <th className="p-5 text-sm font-bold text-gray-600">اسم العميل</th>
-                    <th className="p-5 text-sm font-bold text-gray-600">التاريخ</th>
-                    <th className="p-5 text-sm font-bold text-gray-600">المنتج</th>
-                    <th className="p-5 text-sm font-bold text-gray-600 text-left">الإجمالي</th>
-                    <th className="p-5 text-sm font-bold text-gray-600 text-center">إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-indigo-50/30 transition-colors group">
-                        <td className="p-5 text-sm font-bold text-indigo-700">{inv.invoiceNumber}</td>
-                        <td className="p-5">
-                          <div className="text-sm font-bold text-gray-900">{inv.customerName}</div>
-                          <div className="text-xs text-gray-400">{inv.phone1}</div>
-                        </td>
-                        <td className="p-5 text-sm text-gray-600">{inv.orderDate}</td>
-                        <td className="p-5">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                            {inv.productName}
-                          </span>
-                        </td>
-                        <td className="p-5 text-sm font-black text-gray-900 text-left">
-                          {inv.total} ج.م
-                        </td>
-                        <td className="p-5 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                             <button 
-                              onClick={() => handleEditInvoice(inv)}
-                              className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="تعديل"
-                            >
-                              <Edit3 size={18} />
-                            </button>
-                            <button 
-                              onClick={() => deleteInvoice(inv.id)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="حذف"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="p-20 text-center text-gray-400">
-                        <FileBox size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>لا توجد فواتير مطابقة لبحثك</p>
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden no-print">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="p-5 text-sm font-bold text-gray-600">رقم الفاتورة</th>
+                  <th className="p-5 text-sm font-bold text-gray-600">اسم العميل</th>
+                  <th className="p-5 text-sm font-bold text-gray-600">التاريخ</th>
+                  <th className="p-5 text-sm font-bold text-gray-600">المنتج</th>
+                  <th className="p-5 text-sm font-bold text-gray-600 text-left">الإجمالي</th>
+                  <th className="p-5 text-sm font-bold text-gray-600 text-center">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredInvoices.length > 0 ? (
+                  filteredInvoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-indigo-50/30 transition-colors group">
+                      <td className="p-5 text-sm font-bold text-indigo-700">{inv.invoiceNumber}</td>
+                      <td className="p-5">
+                        <div className="text-sm font-bold text-gray-900">{inv.customerName}</div>
+                        <div className="text-xs text-gray-400">{inv.phone1}</div>
+                      </td>
+                      <td className="p-5 text-sm text-gray-600">{inv.orderDate}</td>
+                      <td className="p-5">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                          {inv.productName}
+                        </span>
+                      </td>
+                      <td className="p-5 text-sm font-black text-gray-900 text-left">
+                        {inv.total} ج.م
+                      </td>
+                      <td className="p-5 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                           <button 
+                            onClick={() => handleEditInvoice(inv)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="تعديل"
+                          >
+                            <Edit3 size={18} />
+                          </button>
+                          <button 
+                            onClick={() => deleteInvoice(inv.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="حذف"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-20 text-center text-gray-400">
+                      <FileBox size={48} className="mx-auto mb-4 opacity-20" />
+                      <p>لا توجد فواتير مطابقة لبحثك</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <footer className="mt-8 text-center text-sm text-gray-400 no-print">
-          &copy; {new Date().getFullYear()} Mr & Mrs Fashion - مزود بخدمة الحفظ السحابي
+          &copy; {new Date().getFullYear()} Mr & Mrs Fashion - جميع الحقوق محفوظة
         </footer>
       </main>
 
