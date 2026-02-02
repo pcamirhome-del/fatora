@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Edit3, Printer } from 'lucide-react';
+import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Edit3 } from 'lucide-react';
 import { Invoice } from './types';
 import InvoiceModal from './components/InvoiceModal';
 
@@ -9,21 +9,21 @@ const App: React.FC = () => {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Load from localStorage on mount
+  // تحميل البيانات من LocalStorage عند بدء التشغيل
   useEffect(() => {
-    const saved = localStorage.getItem('mrs_fashion_invoices');
+    const saved = localStorage.getItem('mm_invoices');
     if (saved) {
       try {
         setInvoices(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to parse invoices', e);
+        console.error("Failed to load invoices", e);
       }
     }
   }, []);
 
-  // Save to localStorage whenever invoices change
+  // حفظ التغييرات في LocalStorage تلقائياً
   useEffect(() => {
-    localStorage.setItem('mrs_fashion_invoices', JSON.stringify(invoices));
+    localStorage.setItem('mm_invoices', JSON.stringify(invoices));
   }, [invoices]);
 
   const handleCreateInvoice = () => {
@@ -37,13 +37,11 @@ const App: React.FC = () => {
   };
 
   const handleSaveInvoice = (savedInvoice: Invoice) => {
-    setInvoices(prev => {
-      const exists = prev.find(inv => inv.id === savedInvoice.id);
-      if (exists) {
-        return prev.map(inv => inv.id === savedInvoice.id ? savedInvoice : inv);
-      }
-      return [savedInvoice, ...prev];
-    });
+    if (editingInvoice) {
+      setInvoices(invoices.map(inv => inv.id === savedInvoice.id ? savedInvoice : inv));
+    } else {
+      setInvoices([savedInvoice, ...invoices]);
+    }
     setIsModalOpen(false);
     setEditingInvoice(null);
   };
@@ -61,7 +59,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-50 text-gray-800 font-sans" dir="rtl">
-      {/* Sidebar - no-print */}
+      {/* Sidebar */}
       <aside className="w-64 bg-indigo-900 text-white flex flex-col shadow-xl no-print fixed h-full z-40">
         <div className="p-6 border-b border-indigo-800">
           <h1 className="text-xl font-black flex items-center gap-2 tracking-tight">
@@ -71,13 +69,16 @@ const App: React.FC = () => {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
+          <div className="pt-2 pb-2 text-xs font-bold text-indigo-400 uppercase tracking-widest px-4">
+            الرئيسية
+          </div>
           <button className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-800/50 hover:bg-indigo-800 rounded-xl transition-all">
             <LayoutDashboard size={20} />
             <span>لوحة التحكم</span>
           </button>
           
           <div className="pt-4 pb-2 text-xs font-bold text-indigo-400 uppercase tracking-widest px-4">
-            الفواتير
+            العمليات
           </div>
           
           <button 
@@ -106,8 +107,8 @@ const App: React.FC = () => {
       <main className="flex-1 mr-64 p-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 no-print">
           <div>
-            <h2 className="text-3xl font-black text-gray-900">سجل الفواتير</h2>
-            <p className="text-gray-500 mt-1">إدارة جميع الفواتير الصادرة لعملائك</p>
+            <h2 className="text-3xl font-black text-gray-900">سجل الفواتير المحلي</h2>
+            <p className="text-gray-500 mt-1">يتم حفظ البيانات في متصفحك الحالي</p>
           </div>
           
           <div className="relative w-full md:w-96">
@@ -123,7 +124,7 @@ const App: React.FC = () => {
         </header>
 
         {/* Invoice List Table */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden no-print">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden no-print min-h-[400px]">
           <div className="overflow-x-auto">
             <table className="w-full text-right border-collapse">
               <thead>
@@ -178,7 +179,7 @@ const App: React.FC = () => {
                   <tr>
                     <td colSpan={6} className="p-20 text-center text-gray-400">
                       <FileBox size={48} className="mx-auto mb-4 opacity-20" />
-                      <p>لا توجد فواتير مطابقة لبحثك</p>
+                      <p>لا توجد فواتير محفوظة حالياً</p>
                     </td>
                   </tr>
                 )}
@@ -188,7 +189,7 @@ const App: React.FC = () => {
         </div>
 
         <footer className="mt-8 text-center text-sm text-gray-400 no-print">
-          &copy; {new Date().getFullYear()} Mr & Mrs Fashion - جميع الحقوق محفوظة
+          &copy; {new Date().getFullYear()} Mr & Mrs Fashion - نظام الفواتير المحلي
         </footer>
       </main>
 
