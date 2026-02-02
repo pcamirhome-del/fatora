@@ -1,0 +1,5 @@
+{
+  "name": "نظام إدارة فواتير مستر أند مسز فاشون",
+  "description": "نظام متكامل لإنشاء وإدارة وتصدير الفواتير لشركة Mr & Mrs Fashion مع دعم تصدير ملفات PDF و Word و Excel والطباعة المباشرة.",
+  "requestFramePermissions": []
+}
