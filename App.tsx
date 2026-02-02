@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Printer } from 'lucide-react';
+import { PlusCircle, List, FileBox, LogOut, LayoutDashboard, Search, Trash2, Edit3, Printer } from 'lucide-react';
 import { Invoice } from './types';
 import InvoiceModal from './components/InvoiceModal';
-import { APP_LOGO } from './constants';
 
 const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Load from localStorage on mount
@@ -27,9 +26,26 @@ const App: React.FC = () => {
     localStorage.setItem('mrs_fashion_invoices', JSON.stringify(invoices));
   }, [invoices]);
 
-  const handleSaveInvoice = (newInvoice: Invoice) => {
-    setInvoices([newInvoice, ...invoices]);
+  const handleCreateInvoice = () => {
+    setEditingInvoice(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveInvoice = (savedInvoice: Invoice) => {
+    setInvoices(prev => {
+      const exists = prev.find(inv => inv.id === savedInvoice.id);
+      if (exists) {
+        return prev.map(inv => inv.id === savedInvoice.id ? savedInvoice : inv);
+      }
+      return [savedInvoice, ...prev];
+    });
     setIsModalOpen(false);
+    setEditingInvoice(null);
   };
 
   const deleteInvoice = (id: string) => {
@@ -39,58 +55,47 @@ const App: React.FC = () => {
   };
 
   const filteredInvoices = invoices.filter(inv => 
-    inv.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    (inv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (inv.invoiceNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="min-h-screen flex bg-gray-50 text-gray-800 font-sans" dir="rtl">
       {/* Sidebar - no-print */}
-      <aside className="w-64 bg-white text-indigo-900 flex flex-col shadow-2xl no-print fixed h-full z-40 border-l border-gray-100">
-        <div className="p-6 flex flex-col items-center gap-4 border-b border-gray-50">
-          <img 
-            src={APP_LOGO} 
-            alt="Logo" 
-            className="w-32 h-32 object-contain drop-shadow-sm" 
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Mr%26Mrs';
-            }}
-          />
-          <h1 className="text-xl font-black text-center text-indigo-950 tracking-tight">
+      <aside className="w-64 bg-indigo-900 text-white flex flex-col shadow-xl no-print fixed h-full z-40">
+        <div className="p-6 border-b border-indigo-800">
+          <h1 className="text-xl font-black flex items-center gap-2 tracking-tight">
+            <FileBox className="text-indigo-300" />
             Mr & Mrs Fashion
           </h1>
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <button 
-            className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl transition-all font-bold"
-          >
+          <button className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-800/50 hover:bg-indigo-800 rounded-xl transition-all">
             <LayoutDashboard size={20} />
             <span>لوحة التحكم</span>
           </button>
           
-          <div className="pt-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-4">
+          <div className="pt-4 pb-2 text-xs font-bold text-indigo-400 uppercase tracking-widest px-4">
             الفواتير
           </div>
           
           <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center gap-3 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition-all shadow-lg shadow-indigo-200 group active:scale-95"
+            onClick={handleCreateInvoice}
+            className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-lg shadow-indigo-900/50 group"
           >
             <PlusCircle size={20} className="group-hover:rotate-90 transition-transform" />
-            <span className="font-bold text-lg">إنشاء فاتورة</span>
+            <span className="font-bold">إنشاء فاتورة</span>
           </button>
           
-          <button 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-indigo-600 rounded-xl transition-all"
-          >
+          <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-800 rounded-xl transition-all">
             <List size={20} />
             <span>قائمة الفواتير</span>
           </button>
         </nav>
         
-        <div className="p-4 border-t border-gray-50">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all">
+        <div className="p-4 border-t border-indigo-800">
+          <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/50 hover:text-red-200 rounded-xl transition-all">
             <LogOut size={20} />
             <span>تسجيل الخروج</span>
           </button>
@@ -102,7 +107,7 @@ const App: React.FC = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 no-print">
           <div>
             <h2 className="text-3xl font-black text-gray-900">سجل الفواتير</h2>
-            <p className="text-gray-500 mt-1">إدارة جميع الفواتير الصادرة لشركة Mr & Mrs Fashion</p>
+            <p className="text-gray-500 mt-1">إدارة جميع الفواتير الصادرة لعملائك</p>
           </div>
           
           <div className="relative w-full md:w-96">
@@ -117,7 +122,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* Invoice List Card */}
+        {/* Invoice List Table */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden no-print">
           <div className="overflow-x-auto">
             <table className="w-full text-right border-collapse">
@@ -142,7 +147,7 @@ const App: React.FC = () => {
                       </td>
                       <td className="p-5 text-sm text-gray-600">{inv.orderDate}</td>
                       <td className="p-5">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
                           {inv.productName}
                         </span>
                       </td>
@@ -150,18 +155,18 @@ const App: React.FC = () => {
                         {inv.total} ج.م
                       </td>
                       <td className="p-5 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-3">
                            <button 
-                            onClick={() => {
-                              alert('يمكنك طباعة الفاتورة عند إنشائها أو من خلال قائمة العمليات قريباً.');
-                            }}
-                            className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                            onClick={() => handleEditInvoice(inv)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="تعديل"
                           >
-                            <Printer size={18} />
+                            <Edit3 size={18} />
                           </button>
                           <button 
                             onClick={() => deleteInvoice(inv.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="حذف"
                           >
                             <Trash2 size={18} />
                           </button>
@@ -174,12 +179,6 @@ const App: React.FC = () => {
                     <td colSpan={6} className="p-20 text-center text-gray-400">
                       <FileBox size={48} className="mx-auto mb-4 opacity-20" />
                       <p>لا توجد فواتير مطابقة لبحثك</p>
-                      <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="mt-4 text-indigo-600 font-bold hover:underline"
-                      >
-                        أنشئ أول فاتورة الآن
-                      </button>
                     </td>
                   </tr>
                 )}
@@ -188,16 +187,18 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer info */}
         <footer className="mt-8 text-center text-sm text-gray-400 no-print">
           &copy; {new Date().getFullYear()} Mr & Mrs Fashion - جميع الحقوق محفوظة
         </footer>
       </main>
 
-      {/* Invoice Modal Popup */}
       <InvoiceModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        editingInvoice={editingInvoice}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingInvoice(null);
+        }} 
         onSave={handleSaveInvoice}
       />
     </div>
